@@ -94,6 +94,50 @@ class REST_Controller {
 			)
 		);
 
+		// Generate draft from site content (AI).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/' . self::REST_BASE . '/generate-draft',
+			array(
+				array(
+					'methods'             => \WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'generate_draft' ),
+					'permission_callback' => array( __CLASS__, 'can_edit' ),
+					'args'                => array(
+						'goal'       => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_textarea_field',
+						),
+						'constraints' => array(
+							'type'              => 'string',
+							'sanitize_callback' => 'sanitize_textarea_field',
+						),
+					),
+				),
+			)
+		);
+
+		// Lint check (lightweight, post editor sidebar).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/' . self::REST_BASE . '/lint',
+			array(
+				array(
+					'methods'             => \WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'lint_post' ),
+					'permission_callback' => array( __CLASS__, 'can_lint_post' ),
+					'args'                => array(
+						'post_id' => array(
+							'required'          => true,
+							'type'              => 'integer',
+							'sanitize_callback' => 'absint',
+							'description'       => __( 'Post ID to lint against guidelines.', 'content-guidelines' ),
+						),
+					),
+				),
+			)
+		);
+
 		// Get revisions.
 		register_rest_route(
 			self::REST_NAMESPACE,
@@ -291,6 +335,51 @@ class REST_Controller {
 	}
 
 	/**
+	 * Check if user can lint a post against guidelines.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return bool True if can lint.
+	 */
+	public static function can_lint_post( $request ) {
+		$post_id = $request->get_param( 'post_id' );
+		return $post_id && current_user_can( 'edit_post', $post_id );
+	}
+
+	/**
+	 * Lint a post against active guidelines.
+	 *
+	 * Lightweight endpoint for the block editor sidebar. Runs only
+	 * lint checks (no AI, no context packets).
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error Response or error.
+	 */
+	public static function lint_post( $request ) {
+		$post_id = $request->get_param( 'post_id' );
+		$post    = get_post( $post_id );
+
+		if ( ! $post ) {
+			return new \WP_Error(
+				'invalid_post',
+				__( 'Post not found.', 'content-guidelines' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$guidelines = Post_Type::get_active_guidelines();
+		if ( ! $guidelines ) {
+			$guidelines = Post_Type::get_default_guidelines();
+		}
+
+		$content = wp_strip_all_tags( do_blocks( $post->post_content ) );
+		$results = Lint_Checker::check( $content, $guidelines );
+		$results['issue_count'] = count( $results['issues'] );
+		$results['ai_available'] = Hooks::has_ai_provider();
+
+		return rest_ensure_response( $results );
+	}
+
+	/**
 	 * Get guidelines (active + draft + metadata).
 	 *
 	 * @param \WP_REST_Request $request The request object.
@@ -318,6 +407,7 @@ class REST_Controller {
 			'post_id'        => $post ? $post->ID : null,
 			'updated_at'     => $post ? $post->post_modified_gmt : null,
 			'revision_count' => $revision_count,
+			'ai_available'   => Hooks::has_ai_provider(),
 		);
 
 		return rest_ensure_response( $response );
@@ -382,6 +472,77 @@ class REST_Controller {
 				'message' => __( 'Draft discarded.', 'content-guidelines' ),
 			)
 		);
+	}
+
+	/**
+	 * Generate guidelines draft from site content using AI.
+	 *
+	 * @param \WP_REST_Request $request The request object.
+	 * @return \WP_REST_Response|\WP_Error Response or error.
+	 */
+	public static function generate_draft( $request ) {
+		$site_context = array(
+			'site_title'   => get_bloginfo( 'name' ),
+			'tagline'      => get_bloginfo( 'description' ),
+			'source_posts' => self::get_recent_post_content_samples( 5 ),
+		);
+
+		$args = array(
+			'goal'       => $request->get_param( 'goal' ) ?: '',
+			'constraints' => $request->get_param( 'constraints' ) ?: '',
+		);
+
+		$draft = Hooks::generate_guidelines_draft( $site_context, $args );
+
+		if ( null === $draft || ! is_array( $draft ) ) {
+			return new \WP_Error(
+				'no_ai_provider',
+				__( 'No AI provider available to generate guidelines. Please start writing manually.', 'content-guidelines' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$result = Post_Type::save_draft( $draft );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'draft'    => $draft,
+				'message'  => __( 'Guidelines generated from site content.', 'content-guidelines' ),
+			)
+		);
+	}
+
+	/**
+	 * Get recent post content samples for AI context.
+	 *
+	 * @param int $limit Number of posts to sample.
+	 * @return array Array of post content strings.
+	 */
+	private static function get_recent_post_content_samples( $limit = 5 ) {
+		$posts = get_posts(
+			array(
+				'post_type'      => 'post',
+				'post_status'    => 'publish',
+				'posts_per_page' => $limit,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$samples = array();
+		foreach ( $posts as $post ) {
+			$content = wp_strip_all_tags( $post->post_content );
+			if ( ! empty( $content ) ) {
+				$samples[] = wp_trim_words( $content, 200 );
+			}
+		}
+
+		return $samples;
 	}
 
 	/**
@@ -558,7 +719,8 @@ class REST_Controller {
 		$fixture_content = self::extract_fixture_content( $fixture_post, $task );
 
 		// Run local lint checks (always available).
-		$lint_results = Lint_Checker::check( $fixture_content, $guidelines );
+		$lint_results   = Lint_Checker::check( $fixture_content, $guidelines );
+		$lint_results['issue_count'] = count( $lint_results['issues'] );
 
 		// Build context packet.
 		$context_packet = Context_Packet_Builder::get_packet(
@@ -610,7 +772,8 @@ class REST_Controller {
 			$active_guidelines = Post_Type::get_active_guidelines();
 
 			if ( $active_guidelines ) {
-				$active_lint = Lint_Checker::check( $fixture_content, $active_guidelines );
+				$active_lint   = Lint_Checker::check( $fixture_content, $active_guidelines );
+				$active_lint['issue_count'] = count( $active_lint['issues'] );
 				$active_packet = Context_Packet_Builder::get_packet(
 					array(
 						'task'    => self::map_playground_task( $task ),

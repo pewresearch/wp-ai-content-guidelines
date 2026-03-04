@@ -4,11 +4,7 @@
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect, useState } from '@wordpress/element';
-import {
-	TabPanel,
-	Spinner,
-	Notice,
-} from '@wordpress/components';
+import { TabPanel, Spinner, Notice } from '@wordpress/components';
 
 /**
  * Internal dependencies
@@ -26,47 +22,39 @@ import './style.scss';
  * @return {JSX.Element} The guidelines screen.
  */
 export default function GuidelinesScreen() {
-	const [ showHistory, setShowHistory ] = useState( false );
-	const [ fixturePostId, setFixturePostId ] = useState( null );
+	const [showHistory, setShowHistory] = useState(false);
+	const [fixturePostId, setFixturePostId] = useState(null);
 
-	const {
-		active,
-		draft,
-		hasDraft,
-		hasGuidelines,
-		isSaving,
-		isPublishing,
-		error,
-	} = useSelect( ( select ) => {
-		const store = select( STORE_NAME );
-		return {
-			active: store.getActive(),
-			draft: store.getDraft(),
-			hasDraft: store.hasDraft(),
-			hasGuidelines: store.hasGuidelines(),
-			isSaving: store.isSaving(),
-			isPublishing: store.isPublishing(),
-			error: store.getError(),
-		};
-	}, [] );
+	const { active, draft, hasGuidelines, isSaving, isPublishing, error } =
+		useSelect((select) => {
+			const store = select(STORE_NAME);
+			return {
+				active: store.getActive(),
+				draft: store.getDraft(),
+				hasGuidelines: store.hasGuidelines(),
+				isSaving: store.isSaving(),
+				isPublishing: store.isPublishing(),
+				error: store.getError(),
+			};
+		}, []);
 
-	const { initializeEditor, setError: clearError } = useDispatch( STORE_NAME );
+	const { initializeEditor, setError: clearError } = useDispatch(STORE_NAME);
 
 	// Initialize editor when guidelines load.
-	useEffect( () => {
-		if ( active && ! draft ) {
+	useEffect(() => {
+		if (active && !draft) {
 			initializeEditor();
 		}
-	}, [ active, draft, initializeEditor ] );
+	}, [active, draft, initializeEditor]);
 
 	// Loading state.
 	const isLoading = active === undefined;
 
-	if ( isLoading ) {
+	if (isLoading) {
 		return (
 			<div className="content-guidelines-screen content-guidelines-screen--loading">
 				<Spinner />
-				<p>{ __( 'Loading guidelines...', 'content-guidelines' ) }</p>
+				<p>{__('Loading guidelines...', 'content-guidelines')}</p>
 			</div>
 		);
 	}
@@ -74,41 +62,40 @@ export default function GuidelinesScreen() {
 	return (
 		<div className="content-guidelines-screen">
 			<Header
-				hasDraft={ hasDraft }
-				isSaving={ isSaving }
-				isPublishing={ isPublishing }
-				onShowHistory={ () => setShowHistory( true ) }
+				isSaving={isSaving}
+				isPublishing={isPublishing}
+				onShowHistory={() => setShowHistory(true)}
 			/>
 
-			{ error && (
+			{error && (
 				<Notice
 					status="error"
 					isDismissible
-					onDismiss={ () => clearError( null ) }
+					onDismiss={() => clearError(null)}
 				>
-					{ error }
+					{error}
 				</Notice>
-			) }
+			)}
 
 			<div className="content-guidelines-screen__content">
 				<div className="content-guidelines-screen__preview">
 					<PreviewCanvas
-						postId={ fixturePostId }
-						onPostSelect={ setFixturePostId }
+						postId={fixturePostId}
+						onPostSelect={setFixturePostId}
 					/>
 				</div>
 
 				<div className="content-guidelines-screen__sidebar">
 					<Sidebar
-						fixturePostId={ fixturePostId }
-						hasGuidelines={ hasGuidelines }
+						fixturePostId={fixturePostId}
+						hasGuidelines={hasGuidelines}
 					/>
 				</div>
 			</div>
 
-			{ showHistory && (
-				<HistoryPanel onClose={ () => setShowHistory( false ) } />
-			) }
+			{showHistory && (
+				<HistoryPanel onClose={() => setShowHistory(false)} />
+			)}
 		</div>
 	);
 }

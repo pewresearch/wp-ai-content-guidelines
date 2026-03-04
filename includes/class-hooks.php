@@ -76,6 +76,29 @@ class Hooks {
 		 */
 
 		/**
+		 * Filter: wp_content_guidelines_analyze_document
+		 *
+		 * Allows AI providers to analyze document blocks against guidelines.
+		 *
+		 * @param array|null $result  The analysis result. Return null if not handling.
+		 * @param array      $request {
+		 *     The request data.
+		 *
+		 *     @type array  $blocks      Stripped block objects with clientId, name, attributes, innerBlocks.
+		 *     @type array  $guidelines  Active guidelines data.
+		 *     @type string $packet_text Context packet text for AI system instruction.
+		 * }
+		 * @return array|null {
+		 *     The result if handled.
+		 *
+		 *     @type array  $issues       Array of { blockClientId, type, message, ... }.
+		 *     @type array  $suggestions  Array of suggestions.
+		 *     @type array  $stats        { word_count, sentence_count, avg_words_per_sentence }.
+		 *     @type int    $issue_count Total issue count.
+		 * }
+		 */
+
+		/**
 		 * Filter: wp_content_guidelines_has_ai_provider
 		 *
 		 * Check if an AI provider is available.
@@ -132,5 +155,21 @@ class Hooks {
 		 * @param array      $request The request.
 		 */
 		return apply_filters( 'wp_content_guidelines_run_playground_test', null, $request );
+	}
+
+	/**
+	 * Analyze document blocks against guidelines using AI.
+	 *
+	 * @param array $request Request with blocks, guidelines, packet_text.
+	 * @return array|null Analysis result or null if no provider.
+	 */
+	public static function analyze_document( $request ) {
+		/**
+		 * Filter to analyze document against guidelines.
+		 *
+		 * @param array|null $result  The analysis result.
+		 * @param array      $request The request (blocks, guidelines, packet_text).
+		 */
+		return apply_filters( 'wp_content_guidelines_analyze_document', null, $request );
 	}
 }

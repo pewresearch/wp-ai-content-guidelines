@@ -4,7 +4,7 @@
  * @param {Object} state Store state.
  * @return {Object|null} Active guidelines.
  */
-export function getActive( state ) {
+export function getActive(state) {
 	return state.active;
 }
 
@@ -14,7 +14,7 @@ export function getActive( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Draft guidelines.
  */
-export function getDraft( state ) {
+export function getDraft(state) {
 	return state.draft;
 }
 
@@ -24,7 +24,7 @@ export function getDraft( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether draft exists.
  */
-export function hasDraft( state ) {
+export function hasDraft(state) {
 	return state.draft !== null;
 }
 
@@ -34,8 +34,8 @@ export function hasDraft( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether draft exists.
  */
-export function getHasDraft( state ) {
-	return hasDraft( state );
+export function getHasDraft(state) {
+	return hasDraft(state);
 }
 
 /**
@@ -44,8 +44,18 @@ export function getHasDraft( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Current guidelines.
  */
-export function getCurrentGuidelines( state ) {
+export function getCurrentGuidelines(state) {
 	return state.draft || state.active;
+}
+
+/**
+ * Check if AI provider is available for playground and draft generation.
+ *
+ * @param {Object} state Store state.
+ * @return {boolean} Whether AI is available.
+ */
+export function getAiAvailable(state) {
+	return state.aiAvailable;
 }
 
 /**
@@ -54,7 +64,7 @@ export function getCurrentGuidelines( state ) {
  * @param {Object} state Store state.
  * @return {number|null} Post ID.
  */
-export function getPostId( state ) {
+export function getPostId(state) {
 	return state.postId;
 }
 
@@ -64,7 +74,7 @@ export function getPostId( state ) {
  * @param {Object} state Store state.
  * @return {string|null} Updated at.
  */
-export function getUpdatedAt( state ) {
+export function getUpdatedAt(state) {
 	return state.updatedAt;
 }
 
@@ -74,7 +84,7 @@ export function getUpdatedAt( state ) {
  * @param {Object} state Store state.
  * @return {number} Revision count.
  */
-export function getRevisionCount( state ) {
+export function getRevisionCount(state) {
 	return state.revisionCount;
 }
 
@@ -84,7 +94,7 @@ export function getRevisionCount( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether saving.
  */
-export function isSaving( state ) {
+export function isSaving(state) {
 	return state.isSaving;
 }
 
@@ -94,7 +104,7 @@ export function isSaving( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether publishing.
  */
-export function isPublishing( state ) {
+export function isPublishing(state) {
 	return state.isPublishing;
 }
 
@@ -104,7 +114,7 @@ export function isPublishing( state ) {
  * @param {Object} state Store state.
  * @return {string|null} Error message.
  */
-export function getError( state ) {
+export function getError(state) {
 	return state.error;
 }
 
@@ -114,7 +124,7 @@ export function getError( state ) {
  * @param {Object} state Store state.
  * @return {Array} Revisions.
  */
-export function getRevisions( state ) {
+export function getRevisions(state) {
 	return state.revisions;
 }
 
@@ -124,7 +134,7 @@ export function getRevisions( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether restoring.
  */
-export function isRestoring( state ) {
+export function isRestoring(state) {
 	return state.isRestoring;
 }
 
@@ -134,7 +144,7 @@ export function isRestoring( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Test results.
  */
-export function getTestResults( state ) {
+export function getTestResults(state) {
 	return state.testResults;
 }
 
@@ -144,7 +154,7 @@ export function getTestResults( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether running test.
  */
-export function isRunningTest( state ) {
+export function isRunningTest(state) {
 	return state.isRunningTest;
 }
 
@@ -154,7 +164,7 @@ export function isRunningTest( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether guidelines exist.
  */
-export function hasGuidelines( state ) {
+export function hasGuidelines(state) {
 	return state.active !== null || state.draft !== null;
 }
 
@@ -164,17 +174,17 @@ export function hasGuidelines( state ) {
  * @param {Object} state Store state.
  * @return {boolean} Whether draft differs from active.
  */
-export function draftHasChanges( state ) {
-	if ( ! state.draft ) {
+export function draftHasChanges(state) {
+	if (!state.draft) {
 		return false;
 	}
 
-	if ( ! state.active ) {
+	if (!state.active) {
 		return true;
 	}
 
 	// Simple JSON comparison.
-	return JSON.stringify( state.draft ) !== JSON.stringify( state.active );
+	return JSON.stringify(state.draft) !== JSON.stringify(state.active);
 }
 
 /**
@@ -184,9 +194,9 @@ export function draftHasChanges( state ) {
  * @param {string} section Section name.
  * @return {Object|null} Section data.
  */
-export function getSection( state, section ) {
+export function getSection(state, section) {
 	const current = state.draft || state.active;
-	return current ? current[ section ] : null;
+	return current ? current[section] : null;
 }
 
 /**
@@ -195,8 +205,8 @@ export function getSection( state, section ) {
  * @param {Object} state Store state.
  * @return {Object|null} Brand context.
  */
-export function getBrandContext( state ) {
-	return getSection( state, 'brand_context' );
+export function getBrandContext(state) {
+	return getSection(state, 'brand_context');
 }
 
 /**
@@ -205,8 +215,8 @@ export function getBrandContext( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Voice & tone.
  */
-export function getVoiceTone( state ) {
-	return getSection( state, 'voice_tone' );
+export function getVoiceTone(state) {
+	return getSection(state, 'voice_tone');
 }
 
 /**
@@ -215,8 +225,8 @@ export function getVoiceTone( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Copy rules.
  */
-export function getCopyRules( state ) {
-	return getSection( state, 'copy_rules' );
+export function getCopyRules(state) {
+	return getSection(state, 'copy_rules');
 }
 
 /**
@@ -225,8 +235,8 @@ export function getCopyRules( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Vocabulary.
  */
-export function getVocabulary( state ) {
-	return getSection( state, 'vocabulary' );
+export function getVocabulary(state) {
+	return getSection(state, 'vocabulary');
 }
 
 /**
@@ -235,8 +245,8 @@ export function getVocabulary( state ) {
  * @param {Object} state Store state.
  * @return {Object|null} Image style.
  */
-export function getImageStyle( state ) {
-	return getSection( state, 'image_style' );
+export function getImageStyle(state) {
+	return getSection(state, 'image_style');
 }
 
 /**
@@ -245,7 +255,7 @@ export function getImageStyle( state ) {
  * @param {Object} state Store state.
  * @return {string|null} Notes.
  */
-export function getNotes( state ) {
+export function getNotes(state) {
 	const current = state.draft || state.active;
 	return current ? current.notes : null;
 }

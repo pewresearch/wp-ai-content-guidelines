@@ -5,11 +5,7 @@ import { Page } from '@wordpress/admin-ui';
 import { __ } from '@wordpress/i18n';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useEffect, useState } from '@wordpress/element';
-import {
-	Spinner,
-	Notice,
-	Button,
-} from '@wordpress/components';
+import { Spinner, Notice, Button } from '@wordpress/components';
 import { backup } from '@wordpress/icons';
 
 /**
@@ -19,6 +15,7 @@ import { STORE_NAME } from '../../store';
 import LibraryPanel from '../library-panel';
 import BlocksPanel from '../blocks-panel';
 import PlaygroundPanel from '../playground';
+import PreviewCanvas from '../guidelines-screen/preview-canvas';
 import HistoryPanel from '../history';
 import ImportExportPanel from '../import-export';
 import EmptyState from '../guidelines-screen/empty-state';
@@ -36,61 +33,71 @@ import './style.scss';
  * @param {Function} props.onShowHistory Callback to show history.
  * @return {JSX.Element} Header actions.
  */
-function HeaderActions( { hasDraft, isSaving, isPublishing, error, onClearError, onShowHistory } ) {
+function HeaderActions({
+	hasDraft,
+	isSaving,
+	isPublishing,
+	error,
+	onClearError,
+	onShowHistory,
+}) {
 	const { saveDraft, publishGuidelines, discardDraft } =
-		useDispatch( STORE_NAME );
+		useDispatch(STORE_NAME);
 
 	return (
 		<div className="guidelines-page__header-actions">
 			<div className="guidelines-page__header-status">
-				{ error && (
+				{error && (
 					<Notice
 						status="error"
 						isDismissible
-						onDismiss={ onClearError }
+						onDismiss={onClearError}
 						className="guidelines-page__header-notice"
 					>
-						{ error }
+						{error}
 					</Notice>
-				) }
-				{ hasDraft && ! error && (
+				)}
+				{hasDraft && !error && (
 					<span className="guidelines-page__draft-indicator">
-						{ __( 'Draft changes not published', 'content-guidelines' ) }
+						{__(
+							'Draft changes not published',
+							'content-guidelines'
+						)}
 					</span>
-				) }
+				)}
 			</div>
 			<div className="guidelines-page__header-buttons">
 				<Button
-					icon={ backup }
-					label={ __( 'History', 'content-guidelines' ) }
-					onClick={ onShowHistory }
+					icon={backup}
+					label={__('History', 'content-guidelines')}
+					onClick={onShowHistory}
 				/>
-				{ hasDraft && (
+				{hasDraft && (
 					<>
 						<Button
 							variant="tertiary"
-							onClick={ discardDraft }
-							disabled={ isSaving || isPublishing }
+							onClick={discardDraft}
+							disabled={isSaving || isPublishing}
 						>
-							{ __( 'Discard', 'content-guidelines' ) }
+							{__('Discard', 'content-guidelines')}
 						</Button>
 						<Button
 							variant="secondary"
-							onClick={ saveDraft }
-							isBusy={ isSaving }
-							disabled={ isSaving || isPublishing }
+							onClick={saveDraft}
+							isBusy={isSaving}
+							disabled={isSaving || isPublishing}
 						>
-							{ __( 'Save draft', 'content-guidelines' ) }
+							{__('Save draft', 'content-guidelines')}
 						</Button>
 					</>
-				) }
+				)}
 				<Button
 					variant="primary"
-					onClick={ publishGuidelines }
-					isBusy={ isPublishing }
-					disabled={ isSaving || isPublishing || ! hasDraft }
+					onClick={publishGuidelines}
+					isBusy={isPublishing}
+					disabled={isSaving || isPublishing || !hasDraft}
 				>
-					{ __( 'Publish', 'content-guidelines' ) }
+					{__('Publish', 'content-guidelines')}
 				</Button>
 			</div>
 		</div>
@@ -103,11 +110,11 @@ function HeaderActions( { hasDraft, isSaving, isPublishing, error, onClearError,
  * @return {Object} URL params.
  */
 function getUrlParams() {
-	const params = new URLSearchParams( window.location.search );
+	const params = new URLSearchParams(window.location.search);
 	return {
-		tab: params.get( 'tab' ) || 'library',
-		section: params.get( 'section' ) || null,
-		block: params.get( 'block' ) || null,
+		tab: params.get('tab') || 'library',
+		section: params.get('section') || null,
+		block: params.get('block') || null,
 	};
 }
 
@@ -116,18 +123,18 @@ function getUrlParams() {
  *
  * @param {Object} updates Params to update.
  */
-function updateUrl( updates ) {
-	const url = new URL( window.location.href );
+function updateUrl(updates) {
+	const url = new URL(window.location.href);
 
-	Object.entries( updates ).forEach( ( [ key, value ] ) => {
-		if ( value ) {
-			url.searchParams.set( key, value );
+	Object.entries(updates).forEach(([key, value]) => {
+		if (value) {
+			url.searchParams.set(key, value);
 		} else {
-			url.searchParams.delete( key );
+			url.searchParams.delete(key);
 		}
-	} );
+	});
 
-	window.history.replaceState( {}, '', url );
+	window.history.replaceState({}, '', url);
 }
 
 /**
@@ -136,17 +143,18 @@ function updateUrl( updates ) {
  * @return {JSX.Element} The guidelines page.
  */
 export default function GuidelinesPage() {
-	const [ showHistory, setShowHistory ] = useState( false );
+	const [showHistory, setShowHistory] = useState(false);
+	const [fixturePostId, setFixturePostId] = useState(null);
 
 	// Initialize from URL params.
 	const initialParams = getUrlParams();
-	const [ activeTab, setActiveTab ] = useState( initialParams.tab );
-	const [ urlSection, setUrlSection ] = useState( initialParams.section );
-	const [ urlBlock, setUrlBlock ] = useState( initialParams.block );
+	const [activeTab, setActiveTab] = useState(initialParams.tab);
+	const [urlSection, setUrlSection] = useState(initialParams.section);
+	const [urlBlock, setUrlBlock] = useState(initialParams.block);
 
 	// Keys to force panel remount when clicking tab while drilled down.
-	const [ libraryKey, setLibraryKey ] = useState( 0 );
-	const [ blocksKey, setBlocksKey ] = useState( 0 );
+	const [libraryKey, setLibraryKey] = useState(0);
+	const [blocksKey, setBlocksKey] = useState(0);
 
 	const {
 		active,
@@ -156,8 +164,8 @@ export default function GuidelinesPage() {
 		isSaving,
 		isPublishing,
 		error,
-	} = useSelect( ( select ) => {
-		const store = select( STORE_NAME );
+	} = useSelect((select) => {
+		const store = select(STORE_NAME);
 		return {
 			active: store.getActive(),
 			draft: store.getDraft(),
@@ -167,163 +175,182 @@ export default function GuidelinesPage() {
 			isPublishing: store.isPublishing(),
 			error: store.getError(),
 		};
-	}, [] );
+	}, []);
 
-	const { initializeEditor, setError: clearError, saveDraft } = useDispatch( STORE_NAME );
+	const {
+		initializeEditor,
+		setError: clearError,
+		saveDraft,
+	} = useDispatch(STORE_NAME);
 
 	// Handle tab changes with URL sync.
-	const handleTabChange = ( tab ) => {
+	const handleTabChange = (tab) => {
 		// If clicking the same tab while drilled down, reset to root view.
-		if ( tab === activeTab ) {
-			if ( tab === 'library' && urlSection ) {
-				setLibraryKey( ( k ) => k + 1 );
-			} else if ( tab === 'blocks' && urlBlock ) {
-				setBlocksKey( ( k ) => k + 1 );
+		if (tab === activeTab) {
+			if (tab === 'library' && urlSection) {
+				setLibraryKey((k) => k + 1);
+			} else if (tab === 'blocks' && urlBlock) {
+				setBlocksKey((k) => k + 1);
 			}
 		}
-		setActiveTab( tab );
+		setActiveTab(tab);
 		// Clear section/block when changing tabs.
-		setUrlSection( null );
-		setUrlBlock( null );
-		updateUrl( { tab, section: null, block: null } );
+		setUrlSection(null);
+		setUrlBlock(null);
+		updateUrl({ tab, section: null, block: null });
 	};
 
 	// Handle section changes from LibraryPanel.
-	const handleSectionChange = ( section ) => {
-		setUrlSection( section );
-		updateUrl( { section } );
+	const handleSectionChange = (section) => {
+		setUrlSection(section);
+		updateUrl({ section });
 	};
 
 	// Handle block changes from BlocksPanel.
-	const handleBlockChange = ( block ) => {
-		setUrlBlock( block );
-		updateUrl( { block } );
+	const handleBlockChange = (block) => {
+		setUrlBlock(block);
+		updateUrl({ block });
 	};
 
 	// Keyboard shortcut: Ctrl+S / Cmd+S to save draft.
-	useEffect( () => {
-		const handleKeyDown = ( event ) => {
-			if ( ( event.ctrlKey || event.metaKey ) && event.key === 's' ) {
+	useEffect(() => {
+		const handleKeyDown = (event) => {
+			if ((event.ctrlKey || event.metaKey) && event.key === 's') {
 				event.preventDefault();
-				if ( hasDraftChanges && ! isSaving && ! isPublishing ) {
+				if (hasDraftChanges && !isSaving && !isPublishing) {
 					saveDraft();
 				}
 			}
 		};
 
-		document.addEventListener( 'keydown', handleKeyDown );
+		document.addEventListener('keydown', handleKeyDown);
 		return () => {
-			document.removeEventListener( 'keydown', handleKeyDown );
+			document.removeEventListener('keydown', handleKeyDown);
 		};
-	}, [ hasDraftChanges, isSaving, isPublishing, saveDraft ] );
+	}, [hasDraftChanges, isSaving, isPublishing, saveDraft]);
 
 	// Initialize editor when guidelines load.
-	useEffect( () => {
-		if ( active && ! draft ) {
+	useEffect(() => {
+		if (active && !draft) {
 			initializeEditor();
 		}
-	}, [ active, draft, initializeEditor ] );
+	}, [active, draft, initializeEditor]);
 
 	// Loading state.
 	const isLoading = active === undefined;
 
-	if ( isLoading ) {
+	if (isLoading) {
 		return (
-			<Page title={ __( 'Guidelines', 'content-guidelines' ) }>
+			<Page title={__('Guidelines', 'content-guidelines')}>
 				<div className="guidelines-page__loading">
 					<Spinner />
-					<p>{ __( 'Loading guidelines...', 'content-guidelines' ) }</p>
+					<p>{__('Loading guidelines...', 'content-guidelines')}</p>
 				</div>
 			</Page>
 		);
 	}
 
 	// Empty state - no guidelines yet.
-	if ( ! hasGuidelines ) {
+	if (!hasGuidelines) {
 		return (
-			<Page title={ __( 'Guidelines', 'content-guidelines' ) }>
+			<Page title={__('Guidelines', 'content-guidelines')}>
 				<EmptyState />
 			</Page>
 		);
 	}
 
 	const leftTabs = [
-		{ name: 'library', title: __( 'Library', 'content-guidelines' ) },
-		{ name: 'blocks', title: __( 'Blocks', 'content-guidelines' ) },
-		{ name: 'playground', title: __( 'Playground', 'content-guidelines' ) },
+		{ name: 'library', title: __('Library', 'content-guidelines') },
+		{ name: 'blocks', title: __('Blocks', 'content-guidelines') },
+		{ name: 'playground', title: __('Playground', 'content-guidelines') },
 	];
 
 	const rightTabs = [
-		{ name: 'import-export', title: __( 'Import / Export', 'content-guidelines' ) },
+		{
+			name: 'import-export',
+			title: __('Import / Export', 'content-guidelines'),
+		},
 	];
 
 	return (
 		<Page
-			title={ __( 'Guidelines', 'content-guidelines' ) }
+			title={__('Guidelines', 'content-guidelines')}
 			actions={
 				<HeaderActions
-					hasDraft={ hasDraftChanges }
-					isSaving={ isSaving }
-					isPublishing={ isPublishing }
-					error={ error }
-					onClearError={ () => clearError( null ) }
-					onShowHistory={ () => setShowHistory( true ) }
+					hasDraft={hasDraftChanges}
+					isSaving={isSaving}
+					isPublishing={isPublishing}
+					error={error}
+					onClearError={() => clearError(null)}
+					onShowHistory={() => setShowHistory(true)}
 				/>
 			}
 		>
 			<div className="guidelines-page__tabs">
 				<div className="guidelines-page__tab-list" role="tablist">
 					<div className="guidelines-page__tab-list-left">
-						{ leftTabs.map( ( tab ) => (
+						{leftTabs.map((tab) => (
 							<button
-								key={ tab.name }
+								key={tab.name}
 								role="tab"
-								aria-selected={ activeTab === tab.name }
-								className={ `guidelines-page__tab ${ activeTab === tab.name ? 'is-active' : '' }` }
-								onClick={ () => handleTabChange( tab.name ) }
+								aria-selected={activeTab === tab.name}
+								className={`guidelines-page__tab ${activeTab === tab.name ? 'is-active' : ''}`}
+								onClick={() => handleTabChange(tab.name)}
 							>
-								{ tab.title }
+								{tab.title}
 							</button>
-						) ) }
+						))}
 					</div>
 					<div className="guidelines-page__tab-list-right">
-						{ rightTabs.map( ( tab ) => (
+						{rightTabs.map((tab) => (
 							<button
-								key={ tab.name }
+								key={tab.name}
 								role="tab"
-								aria-selected={ activeTab === tab.name }
-								className={ `guidelines-page__tab ${ activeTab === tab.name ? 'is-active' : '' }` }
-								onClick={ () => handleTabChange( tab.name ) }
+								aria-selected={activeTab === tab.name}
+								className={`guidelines-page__tab ${activeTab === tab.name ? 'is-active' : ''}`}
+								onClick={() => handleTabChange(tab.name)}
 							>
-								{ tab.title }
+								{tab.title}
 							</button>
-						) ) }
+						))}
 					</div>
 				</div>
 
 				<div className="guidelines-page__tab-panel" role="tabpanel">
-					{ activeTab === 'library' && (
+					{activeTab === 'library' && (
 						<LibraryPanel
-							key={ libraryKey }
-							initialSection={ urlSection }
-							onSectionChange={ handleSectionChange }
+							key={libraryKey}
+							initialSection={urlSection}
+							onSectionChange={handleSectionChange}
 						/>
-					) }
-					{ activeTab === 'blocks' && (
+					)}
+					{activeTab === 'blocks' && (
 						<BlocksPanel
-							key={ blocksKey }
-							initialBlock={ urlBlock }
-							onBlockChange={ handleBlockChange }
+							key={blocksKey}
+							initialBlock={urlBlock}
+							onBlockChange={handleBlockChange}
 						/>
-					) }
-					{ activeTab === 'playground' && <PlaygroundPanel /> }
-					{ activeTab === 'import-export' && <ImportExportPanel /> }
+					)}
+					{activeTab === 'playground' && (
+						<div className="guidelines-page__playground-layout">
+							<div className="guidelines-page__playground-preview">
+								<PreviewCanvas
+									postId={fixturePostId}
+									onPostSelect={setFixturePostId}
+								/>
+							</div>
+							<div className="guidelines-page__playground-panel">
+								<PlaygroundPanel fixturePostId={fixturePostId} />
+							</div>
+						</div>
+					)}
+					{activeTab === 'import-export' && <ImportExportPanel />}
 				</div>
 			</div>
 
-			{ showHistory && (
-				<HistoryPanel onClose={ () => setShowHistory( false ) } />
-			) }
+			{showHistory && (
+				<HistoryPanel onClose={() => setShowHistory(false)} />
+			)}
 		</Page>
 	);
 }

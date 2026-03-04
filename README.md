@@ -181,12 +181,6 @@ By default this project runs wp-env on `http://localhost:6000` (configured in `.
 
 Optional: WordPress Playground is still supported for quick previews via `blueprint.json` / `blueprint-dev.json`.
 
-## Related Docs
-
-- [Full Specification](./SPEC.md) - Complete product and technical spec
-- [Summary](./SUMMARY.md) - One-page overview for stakeholders
-- [Implementation Notes](./IMPLEMENTATION.md) - Development details
-
 ## License
 
 GPL-2.0-or-later

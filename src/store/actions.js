@@ -22,7 +22,7 @@ export const SET_RUNNING_TEST = 'SET_RUNNING_TEST';
  * @param {Object} data Guidelines data.
  * @return {Object} Action object.
  */
-export function setGuidelines( data ) {
+export function setGuidelines(data) {
 	return {
 		type: SET_GUIDELINES,
 		payload: data,
@@ -35,7 +35,7 @@ export function setGuidelines( data ) {
  * @param {Object} draft Draft data.
  * @return {Object} Action object.
  */
-export function setDraft( draft ) {
+export function setDraft(draft) {
 	return {
 		type: SET_DRAFT,
 		payload: draft,
@@ -48,7 +48,7 @@ export function setDraft( draft ) {
  * @param {boolean} isSaving Whether saving.
  * @return {Object} Action object.
  */
-export function setSaving( isSaving ) {
+export function setSaving(isSaving) {
 	return {
 		type: SET_SAVING,
 		payload: isSaving,
@@ -61,7 +61,7 @@ export function setSaving( isSaving ) {
  * @param {boolean} isPublishing Whether publishing.
  * @return {Object} Action object.
  */
-export function setPublishing( isPublishing ) {
+export function setPublishing(isPublishing) {
 	return {
 		type: SET_PUBLISHING,
 		payload: isPublishing,
@@ -74,7 +74,7 @@ export function setPublishing( isPublishing ) {
  * @param {string|null} error Error message.
  * @return {Object} Action object.
  */
-export function setError( error ) {
+export function setError(error) {
 	return {
 		type: SET_ERROR,
 		payload: error,
@@ -87,7 +87,7 @@ export function setError( error ) {
  * @param {Array} revisions Revisions list.
  * @return {Object} Action object.
  */
-export function setRevisions( revisions ) {
+export function setRevisions(revisions) {
 	return {
 		type: SET_REVISIONS,
 		payload: revisions,
@@ -100,7 +100,7 @@ export function setRevisions( revisions ) {
  * @param {boolean} isRestoring Whether restoring.
  * @return {Object} Action object.
  */
-export function setRestoring( isRestoring ) {
+export function setRestoring(isRestoring) {
 	return {
 		type: SET_RESTORING,
 		payload: isRestoring,
@@ -113,7 +113,7 @@ export function setRestoring( isRestoring ) {
  * @param {Object} results Test results.
  * @return {Object} Action object.
  */
-export function setTestResults( results ) {
+export function setTestResults(results) {
 	return {
 		type: SET_TEST_RESULTS,
 		payload: results,
@@ -126,7 +126,7 @@ export function setTestResults( results ) {
  * @param {boolean} isRunning Whether running.
  * @return {Object} Action object.
  */
-export function setRunningTest( isRunning ) {
+export function setRunningTest(isRunning) {
 	return {
 		type: SET_RUNNING_TEST,
 		payload: isRunning,
@@ -140,17 +140,17 @@ export function setRunningTest( isRunning ) {
  * @param {boolean} saveToServer Whether to save to server.
  * @return {Function} Thunk action.
  */
-export function updateDraft( updates, saveToServer = false ) {
-	return async ( { dispatch, select } ) => {
+export function updateDraft(updates, saveToServer = false) {
+	return async ({ dispatch, select }) => {
 		const currentDraft = select.getDraft() || select.getActive() || {};
 		const newDraft = {
 			...currentDraft,
 			...updates,
 		};
 
-		dispatch.setDraft( newDraft );
+		dispatch.setDraft(newDraft);
 
-		if ( saveToServer ) {
+		if (saveToServer) {
 			await dispatch.saveDraft();
 		}
 	};
@@ -163,20 +163,20 @@ export function updateDraft( updates, saveToServer = false ) {
  * @param {string} section Section name.
  * @return {Function} Thunk action.
  */
-export function updateDraftSection( section, updates ) {
-	return async ( { dispatch, select } ) => {
+export function updateDraftSection(section, updates) {
+	return async ({ dispatch, select }) => {
 		const currentDraft = select.getDraft() || select.getActive() || {};
-		const currentSection = currentDraft[ section ] || {};
+		const currentSection = currentDraft[section] || {};
 
 		const newDraft = {
 			...currentDraft,
-			[ section ]: {
+			[section]: {
 				...currentSection,
 				...updates,
 			},
 		};
 
-		dispatch.setDraft( newDraft );
+		dispatch.setDraft(newDraft);
 	};
 }
 
@@ -186,26 +186,26 @@ export function updateDraftSection( section, updates ) {
  * @return {Function} Thunk action.
  */
 export function saveDraft() {
-	return async ( { dispatch, select } ) => {
+	return async ({ dispatch, select }) => {
 		const draft = select.getDraft();
 
-		if ( ! draft ) {
+		if (!draft) {
 			return;
 		}
 
-		dispatch.setSaving( true );
-		dispatch.setError( null );
+		dispatch.setSaving(true);
+		dispatch.setError(null);
 
 		try {
-			await apiFetch( {
+			await apiFetch({
 				path: '/wp/v2/content-guidelines/draft',
 				method: 'PUT',
 				data: { guidelines: draft },
-			} );
-		} catch ( error ) {
-			dispatch.setError( error.message || 'Failed to save draft.' );
+			});
+		} catch (error) {
+			dispatch.setError(error.message || 'Failed to save draft.');
 		} finally {
-			dispatch.setSaving( false );
+			dispatch.setSaving(false);
 		}
 	};
 }
@@ -216,41 +216,41 @@ export function saveDraft() {
  * @return {Function} Thunk action.
  */
 export function publishDraft() {
-	return async ( { dispatch, select } ) => {
+	return async ({ dispatch, select }) => {
 		const draft = select.getDraft();
 
-		if ( ! draft ) {
+		if (!draft) {
 			return;
 		}
 
-		dispatch.setPublishing( true );
-		dispatch.setError( null );
+		dispatch.setPublishing(true);
+		dispatch.setError(null);
 
 		try {
 			// First save the draft.
-			await apiFetch( {
+			await apiFetch({
 				path: '/wp/v2/content-guidelines/draft',
 				method: 'PUT',
 				data: { guidelines: draft },
-			} );
+			});
 
 			// Then publish.
-			await apiFetch( {
+			await apiFetch({
 				path: '/wp/v2/content-guidelines/publish',
 				method: 'POST',
-			} );
+			});
 
 			// Refresh guidelines.
-			const data = await apiFetch( {
+			const data = await apiFetch({
 				path: '/wp/v2/content-guidelines',
-			} );
+			});
 
-			dispatch.setGuidelines( data );
-			dispatch.setDraft( null );
-		} catch ( error ) {
-			dispatch.setError( error.message || 'Failed to publish.' );
+			dispatch.setGuidelines(data);
+			dispatch.setDraft(null);
+		} catch (error) {
+			dispatch.setError(error.message || 'Failed to publish.');
 		} finally {
-			dispatch.setPublishing( false );
+			dispatch.setPublishing(false);
 		}
 	};
 }
@@ -261,24 +261,61 @@ export function publishDraft() {
  * @return {Function} Thunk action.
  */
 export function discardDraft() {
-	return async ( { dispatch, select } ) => {
-		dispatch.setError( null );
+	return async ({ dispatch, select }) => {
+		dispatch.setError(null);
 
 		try {
-			await apiFetch( {
+			await apiFetch({
 				path: '/wp/v2/content-guidelines/discard-draft',
 				method: 'POST',
-			} );
+			});
 
 			// Reset draft to active guidelines
 			const active = select.getActive();
-			if ( active ) {
-				dispatch.setDraft( { ...active } );
+			if (active) {
+				dispatch.setDraft({ ...active });
 			} else {
-				dispatch.setDraft( null );
+				dispatch.setDraft(null);
 			}
-		} catch ( error ) {
-			dispatch.setError( error.message || 'Failed to discard draft.' );
+		} catch (error) {
+			dispatch.setError(error.message || 'Failed to discard draft.');
+		}
+	};
+}
+
+/**
+ * Generate draft from site content using AI.
+ *
+ * @param {Object} options Optional: goal, constraints.
+ * @return {Function} Thunk action.
+ */
+export function generateDraft(options = {}) {
+	return async ({ dispatch }) => {
+		dispatch.setSaving(true);
+		dispatch.setError(null);
+
+		try {
+			await apiFetch({
+				path: '/wp/v2/content-guidelines/generate-draft',
+				method: 'POST',
+				data: {
+					goal: options.goal || '',
+					constraints: options.constraints || '',
+				},
+			});
+
+			// Refresh guidelines to get full state with new draft.
+			const data = await apiFetch({
+				path: '/wp/v2/content-guidelines',
+			});
+
+			dispatch.setGuidelines(data);
+		} catch (error) {
+			dispatch.setError(
+				error.message || 'Failed to generate guidelines.'
+			);
+		} finally {
+			dispatch.setSaving(false);
 		}
 	};
 }
@@ -289,14 +326,14 @@ export function discardDraft() {
  * @return {Function} Thunk action.
  */
 export function fetchRevisions() {
-	return async ( { dispatch } ) => {
+	return async ({ dispatch }) => {
 		try {
-			const revisions = await apiFetch( {
+			const revisions = await apiFetch({
 				path: '/wp/v2/content-guidelines/revisions',
-			} );
+			});
 
-			dispatch.setRevisions( revisions );
-		} catch ( error ) {
+			dispatch.setRevisions(revisions);
+		} catch (error) {
 			// Silently fail for revisions.
 		}
 	};
@@ -308,30 +345,30 @@ export function fetchRevisions() {
  * @param {number} revisionId Revision ID.
  * @return {Function} Thunk action.
  */
-export function restoreRevision( revisionId ) {
-	return async ( { dispatch } ) => {
-		dispatch.setRestoring( true );
-		dispatch.setError( null );
+export function restoreRevision(revisionId) {
+	return async ({ dispatch }) => {
+		dispatch.setRestoring(true);
+		dispatch.setError(null);
 
 		try {
-			await apiFetch( {
-				path: `/wp/v2/content-guidelines/restore/${ revisionId }`,
+			await apiFetch({
+				path: `/wp/v2/content-guidelines/restore/${revisionId}`,
 				method: 'POST',
-			} );
+			});
 
 			// Refresh guidelines.
-			const data = await apiFetch( {
+			const data = await apiFetch({
 				path: '/wp/v2/content-guidelines',
-			} );
+			});
 
-			dispatch.setGuidelines( data );
+			dispatch.setGuidelines(data);
 
 			// Refresh revisions.
 			await dispatch.fetchRevisions();
-		} catch ( error ) {
-			dispatch.setError( error.message || 'Failed to restore revision.' );
+		} catch (error) {
+			dispatch.setError(error.message || 'Failed to restore revision.');
 		} finally {
-			dispatch.setRestoring( false );
+			dispatch.setRestoring(false);
 		}
 	};
 }
@@ -342,24 +379,24 @@ export function restoreRevision( revisionId ) {
  * @param {Object} options Test options.
  * @return {Function} Thunk action.
  */
-export function runPlaygroundTest( options ) {
-	return async ( { dispatch } ) => {
-		dispatch.setRunningTest( true );
-		dispatch.setTestResults( null );
-		dispatch.setError( null );
+export function runPlaygroundTest(options) {
+	return async ({ dispatch }) => {
+		dispatch.setRunningTest(true);
+		dispatch.setTestResults(null);
+		dispatch.setError(null);
 
 		try {
-			const results = await apiFetch( {
+			const results = await apiFetch({
 				path: '/wp/v2/content-guidelines/test',
 				method: 'POST',
 				data: options,
-			} );
+			});
 
-			dispatch.setTestResults( results );
-		} catch ( error ) {
-			dispatch.setError( error.message || 'Failed to run test.' );
+			dispatch.setTestResults(results);
+		} catch (error) {
+			dispatch.setError(error.message || 'Failed to run test.');
 		} finally {
-			dispatch.setRunningTest( false );
+			dispatch.setRunningTest(false);
 		}
 	};
 }
@@ -370,13 +407,13 @@ export function runPlaygroundTest( options ) {
  * @return {Function} Thunk action.
  */
 export function initializeEditor() {
-	return async ( { dispatch, select } ) => {
+	return async ({ dispatch, select }) => {
 		const hasDraft = select.hasDraft();
 
-		if ( ! hasDraft ) {
+		if (!hasDraft) {
 			const active = select.getActive();
-			if ( active ) {
-				dispatch.setDraft( { ...active } );
+			if (active) {
+				dispatch.setDraft({ ...active });
 			}
 		}
 	};
@@ -389,8 +426,8 @@ export function initializeEditor() {
  * @param {Object} guidelines Guidelines for this block.
  * @return {Function} Thunk action.
  */
-export function updateBlockGuidelines( blockName, guidelines ) {
-	return async ( { dispatch, select } ) => {
+export function updateBlockGuidelines(blockName, guidelines) {
+	return async ({ dispatch, select }) => {
 		const currentDraft = select.getDraft() || select.getActive() || {};
 		const currentBlocks = currentDraft.blocks || {};
 
@@ -398,11 +435,11 @@ export function updateBlockGuidelines( blockName, guidelines ) {
 			...currentDraft,
 			blocks: {
 				...currentBlocks,
-				[ blockName ]: guidelines,
+				[blockName]: guidelines,
 			},
 		};
 
-		dispatch.setDraft( newDraft );
+		dispatch.setDraft(newDraft);
 	};
 }
 

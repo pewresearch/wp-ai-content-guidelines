@@ -7,7 +7,9 @@
 
 // Fix boot container to viewport height (override min-height with height)
 .boot-layout-container {
-	height: calc(100vh - 32px - 8px); // Match the min-height value but as fixed height
+	height: calc(
+		100vh - 32px - 8px
+	); // Match the min-height value but as fixed height
 	min-height: 0; // Override the min-height
 	max-height: calc(100vh - 32px - 8px);
 
@@ -20,6 +22,10 @@
 		height: calc(100vh - 46px);
 		max-height: calc(100vh - 46px);
 	}
+}
+
+.content-guidelines-preview {
+	padding: 24px;
 }
 
 // Constrain admin-ui-page within boot container
@@ -283,6 +289,24 @@
 		font-size: 12px;
 		color: #949494;
 		margin-top: 24px;
+	}
+}
+
+// Playground tab layout
+.guidelines-page__playground-layout {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0;
+	height: 100%;
+	min-height: 600px;
+
+	.guidelines-page__playground-preview {
+		border-right: 1px solid #e0e0e0;
+		overflow-y: auto;
+	}
+
+	.guidelines-page__playground-panel {
+		overflow-y: auto;
 	}
 }
 

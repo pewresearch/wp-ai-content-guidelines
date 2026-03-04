@@ -89,6 +89,7 @@ class Abilities {
 		// Testing abilities.
 		self::register_run_test_ability();
 		self::register_check_lint_ability();
+		self::register_analyze_document_ability();
 	}
 
 	/**
@@ -1004,6 +1005,65 @@ class Abilities {
 	}
 
 	/**
+	 * Register the analyze-document ability.
+	 */
+	private static function register_analyze_document_ability() {
+		wp_register_ability(
+			self::NAMESPACE . '/analyze-document',
+			array(
+				'label'               => __( 'Analyze Document', 'content-guidelines' ),
+				'description'         => __( 'AI-powered analysis of document blocks against guidelines. Returns vocabulary, tone, readability, and copy rule issues with blockClientId references.', 'content-guidelines' ),
+				'category'            => self::CATEGORY,
+				'input_schema'        => array(
+					'type'       => 'object',
+					'required'   => array( 'blocks' ),
+					'properties' => array(
+						'blocks' => array(
+							'type'        => 'array',
+							'description' => __( 'Stripped block objects with clientId, name, attributes, innerBlocks.', 'content-guidelines' ),
+							'items'       => array(
+								'type'       => 'object',
+								'properties' => array(
+									'clientId'     => array( 'type' => 'string' ),
+									'name'         => array( 'type' => 'string' ),
+									'attributes'   => array( 'type' => 'object' ),
+									'innerBlocks'  => array( 'type' => 'array' ),
+								),
+							),
+						),
+					),
+				),
+				'output_schema'       => array(
+					'type'       => 'object',
+					'properties' => array(
+						'issues'       => array(
+							'type'        => 'array',
+							'description' => __( 'Array of issues with blockClientId, type, message.', 'content-guidelines' ),
+						),
+						'suggestions'   => array(
+							'type'        => 'array',
+							'description' => __( 'Array of suggestions.', 'content-guidelines' ),
+						),
+						'stats'         => array(
+							'type'        => 'object',
+							'description' => __( 'Word count, sentence count, avg words per sentence.', 'content-guidelines' ),
+						),
+						'issue_count'   => array(
+							'type'        => 'integer',
+							'description' => __( 'Total number of issues.', 'content-guidelines' ),
+						),
+					),
+				),
+				'execute_callback'    => array( __CLASS__, 'execute_analyze_document' ),
+				'permission_callback' => array( __CLASS__, 'can_view_guidelines' ),
+				'meta'                => array(
+					'show_in_rest' => true,
+				),
+			)
+		);
+	}
+
+	/**
 	 * Register the check-lint ability.
 	 */
 	private static function register_check_lint_ability() {
@@ -1288,6 +1348,54 @@ class Abilities {
 				);
 			}
 		}
+
+		return $result;
+	}
+
+	/**
+	 * Execute analyze-document ability.
+	 *
+	 * @param array $input The input parameters.
+	 * @return array|WP_Error Result.
+	 */
+	public static function execute_analyze_document( $input ) {
+		if ( ! isset( $input['blocks'] ) || ! is_array( $input['blocks'] ) ) {
+			return new \WP_Error(
+				'missing_blocks',
+				__( 'Blocks array is required.', 'content-guidelines' )
+			);
+		}
+
+		$guidelines = Post_Type::get_active_guidelines();
+		if ( ! $guidelines ) {
+			$guidelines = Post_Type::get_default_guidelines();
+		}
+
+		$packet = Context_Packet_Builder::get_packet(
+			array(
+				'task'      => 'coach',
+				'use'       => 'active',
+				'max_chars' => 4000,
+			)
+		);
+
+		$request = array(
+			'blocks'      => $input['blocks'],
+			'guidelines'  => $guidelines,
+			'packet_text' => isset( $packet['packet_text'] ) ? $packet['packet_text'] : '',
+		);
+
+		$result = Hooks::analyze_document( $request );
+
+		if ( null === $result ) {
+			return new \WP_Error(
+				'ai_unavailable',
+				__( 'AI analysis requires an AI provider. Contact your administrator.', 'content-guidelines' )
+			);
+		}
+
+		$issue_count = isset( $result['issues'] ) ? count( $result['issues'] ) : 0;
+		$result['issue_count'] = $issue_count;
 
 		return $result;
 	}

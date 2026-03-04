@@ -20,36 +20,45 @@ import {
  * @param {Object} blocks Blocks object with stripped keys.
  * @return {Object} Blocks object with normalized keys.
  */
-function normalizeBlockKeys( blocks ) {
-	if ( ! blocks || typeof blocks !== 'object' ) {
+function normalizeBlockKeys(blocks) {
+	if (!blocks || typeof blocks !== 'object') {
 		return blocks;
 	}
 
 	const normalized = {};
-	const namespaces = [ 'core', 'jetpack', 'woocommerce', 'generateblocks', 'kadence', 'stackable', 'spectra', 'otter' ];
+	const namespaces = [
+		'core',
+		'jetpack',
+		'woocommerce',
+		'generateblocks',
+		'kadence',
+		'stackable',
+		'spectra',
+		'otter',
+	];
 
-	for ( const [ key, value ] of Object.entries( blocks ) ) {
+	for (const [key, value] of Object.entries(blocks)) {
 		// If already has a slash, keep as-is
-		if ( key.includes( '/' ) ) {
-			normalized[ key ] = value;
+		if (key.includes('/')) {
+			normalized[key] = value;
 			continue;
 		}
 
 		// Try to match a known namespace prefix
 		let matched = false;
-		for ( const ns of namespaces ) {
-			if ( key.startsWith( ns ) && key.length > ns.length ) {
-				const blockName = key.slice( ns.length );
+		for (const ns of namespaces) {
+			if (key.startsWith(ns) && key.length > ns.length) {
+				const blockName = key.slice(ns.length);
 				// Handle hyphenated names like 'media-text'
-				normalized[ `${ ns }/${ blockName }` ] = value;
+				normalized[`${ns}/${blockName}`] = value;
 				matched = true;
 				break;
 			}
 		}
 
 		// If no namespace matched, keep original key
-		if ( ! matched ) {
-			normalized[ key ] = value;
+		if (!matched) {
+			normalized[key] = value;
 		}
 	}
 
@@ -62,14 +71,14 @@ function normalizeBlockKeys( blocks ) {
  * @param {Object} guidelines Guidelines object.
  * @return {Object} Normalized guidelines.
  */
-function normalizeGuidelines( guidelines ) {
-	if ( ! guidelines ) {
+function normalizeGuidelines(guidelines) {
+	if (!guidelines) {
 		return guidelines;
 	}
 
 	return {
 		...guidelines,
-		blocks: normalizeBlockKeys( guidelines.blocks ),
+		blocks: normalizeBlockKeys(guidelines.blocks),
 	};
 }
 
@@ -82,6 +91,7 @@ const DEFAULT_STATE = {
 	postId: null,
 	updatedAt: null,
 	revisionCount: 0,
+	aiAvailable: false,
 	isSaving: false,
 	isPublishing: false,
 	error: null,
@@ -98,16 +108,17 @@ const DEFAULT_STATE = {
  * @param {Object} action Action object.
  * @return {Object} New state.
  */
-export default function reducer( state = DEFAULT_STATE, action ) {
-	switch ( action.type ) {
+export default function reducer(state = DEFAULT_STATE, action) {
+	switch (action.type) {
 		case SET_GUIDELINES:
 			return {
 				...state,
-				active: normalizeGuidelines( action.payload.active ),
-				draft: normalizeGuidelines( action.payload.draft ) || state.draft,
+				active: normalizeGuidelines(action.payload.active),
+				draft: normalizeGuidelines(action.payload.draft) || state.draft,
 				postId: action.payload.post_id,
 				updatedAt: action.payload.updated_at,
 				revisionCount: action.payload.revision_count,
+				aiAvailable: !!action.payload.ai_available,
 			};
 
 		case SET_DRAFT:
