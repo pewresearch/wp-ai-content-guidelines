@@ -35,7 +35,7 @@
 		"@wordpress/admin-ui": "^1.9.0",
 		"@wordpress/api-fetch": "^7.41.0",
 		"@wordpress/block-editor": "^15.14.0",
-		"@wordpress/edit-post": "^9.41.0",
+		"@wordpress/edit-post": "^8.41.0",
 		"@wordpress/boot": "^0.8.0",
 		"@wordpress/commands": "^1.14.0",
 		"@wordpress/components": "^32.3.0",
